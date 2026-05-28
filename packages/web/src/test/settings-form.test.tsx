@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { SettingsForm } from "@/components/settings/SettingsForm";
 import { HONCHO_CLOUD_URL, loadStore } from "@/lib/config";
 
@@ -9,6 +9,10 @@ function renderForm(ui: React.ReactElement) {
 	const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 	return render(<QueryClientProvider client={qc}>{ui}</QueryClientProvider>);
 }
+
+afterEach(() => {
+	localStorage.clear();
+});
 
 describe("SettingsForm — cloud preset", () => {
 	it("does not render the editable Base URL input", () => {
@@ -31,6 +35,7 @@ describe("SettingsForm — cloud preset", () => {
 
 	it("saves with the Honcho Cloud URL when a token is provided", async () => {
 		const user = userEvent.setup();
+		localStorage.clear();
 		renderForm(<SettingsForm instance={null} preset="cloud" />);
 		await user.type(screen.getByPlaceholderText(/Paste your Honcho Cloud API key/i), "sk-test-1");
 		await user.click(screen.getByRole("button", { name: /Connect to Honcho Cloud/i }));
@@ -54,6 +59,7 @@ describe("SettingsForm — self-hosted preset", () => {
 	});
 
 	it("blocks saving a token for a non-localhost HTTP endpoint", async () => {
+		localStorage.clear();
 		const user = userEvent.setup();
 		renderForm(<SettingsForm instance={null} preset="self-hosted" />);
 		const baseUrl = screen.getByPlaceholderText("http://localhost:8000");
