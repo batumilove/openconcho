@@ -37,6 +37,19 @@ const storeSchema = z.object({
 
 export type InstanceStore = z.infer<typeof storeSchema>;
 
+const DEFAULT_HONCHO_URL = import.meta.env.VITE_DEFAULT_HONCHO_URL as string | undefined;
+
+function defaultStore(): InstanceStore {
+	if (!DEFAULT_HONCHO_URL) return { instances: [], activeId: null };
+	const inst: Instance = {
+		id: "default-honcho",
+		name: "Honcho",
+		baseUrl: DEFAULT_HONCHO_URL,
+		token: "",
+	};
+	return { instances: [inst], activeId: inst.id };
+}
+
 function newId(): string {
 	if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
 		return crypto.randomUUID();
@@ -73,7 +86,7 @@ export function loadStore(): InstanceStore {
 	}
 	const migrated = migrateLegacy();
 	if (migrated) return migrated;
-	return { instances: [], activeId: null };
+	return defaultStore();
 }
 
 export function saveStore(store: InstanceStore): void {
@@ -115,9 +128,10 @@ export function clearConfig(): void {
 export function addInstance(input: Omit<Instance, "id">): Instance {
 	const store = loadStore();
 	const inst: Instance = { id: newId(), ...input };
+	const existing = store.instances.filter((i) => i.id !== "default-honcho");
 	const next: InstanceStore = {
-		instances: [...store.instances, inst],
-		activeId: store.activeId ?? inst.id,
+		instances: [...existing, inst],
+		activeId: store.activeId === "default-honcho" ? inst.id : (store.activeId ?? inst.id),
 	};
 	saveStore(next);
 	return inst;
