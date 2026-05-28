@@ -3,6 +3,7 @@ import { createMemoryHistory, createRouter, RouterProvider } from "@tanstack/rea
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { DemoProvider } from "@/context/DemoContext";
+import { MetadataProvider } from "@/context/MetadataContext";
 import { useDemo } from "@/hooks/useDemo";
 import { routeTree } from "@/routeTree.gen";
 
@@ -15,8 +16,10 @@ function renderAt(initialPath: string) {
 	return render(
 		<QueryClientProvider client={qc}>
 			<DemoProvider>
-				{/* biome-ignore lint/suspicious/noExplicitAny: test router type */}
-				<RouterProvider router={router as any} />
+				<MetadataProvider>
+					{/* biome-ignore lint/suspicious/noExplicitAny: test router type */}
+					<RouterProvider router={router as any} />
+				</MetadataProvider>
 			</DemoProvider>
 		</QueryClientProvider>,
 	);
@@ -40,10 +43,10 @@ describe("Sidebar/useDemo availability across routes", () => {
 			const { demo } = useDemo();
 			return <span data-testid="demo-flag">{String(demo)}</span>;
 		}
-		// After the fix, DemoProvider wraps the app at the root (main.tsx /
-		// __root.tsx) so consumers anywhere in the tree resolve. This test
-		// renders a consumer as a sibling of the router under the same provider
-		// the production wiring uses.
+		// After the fix, DemoProvider and MetadataProvider wrap the app at
+		// the root (main.tsx) so consumers anywhere in the tree resolve.
+		// This test renders a consumer as a sibling of the router under the
+		// same providers the production wiring uses.
 		localStorage.clear();
 		expect(() => {
 			const router = createRouter({
@@ -56,9 +59,11 @@ describe("Sidebar/useDemo availability across routes", () => {
 			render(
 				<QueryClientProvider client={qc}>
 					<DemoProvider>
-						{/* biome-ignore lint/suspicious/noExplicitAny: test router type */}
-						<RouterProvider router={router as any} />
-						<DemoConsumer />
+						<MetadataProvider>
+							{/* biome-ignore lint/suspicious/noExplicitAny: test router type */}
+							<RouterProvider router={router as any} />
+							<DemoConsumer />
+						</MetadataProvider>
 					</DemoProvider>
 				</QueryClientProvider>,
 			);
